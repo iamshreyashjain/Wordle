@@ -1,10 +1,10 @@
 using UnityEngine;
 using TMPro;
-
+using UnityEngine.SceneManagement;
 public class Board : MonoBehaviour
 {
     [SerializeField]
-    GameObject canvasOne, canvasTwo;
+    GameObject canvasOne, canvasTwo, canvasThree;
 
     private static readonly KeyCode[] SUPPORTED_KEYS = new KeyCode[] {
         KeyCode.A, KeyCode.B, KeyCode.C, KeyCode.D, KeyCode.E, KeyCode.F,
@@ -32,8 +32,8 @@ public class Board : MonoBehaviour
     public Tile.State correctState;
     public Tile.State wrongSpotState;
     public Tile.State incorrectState;
+    string str = "";
 
- 
 
     private void Awake()
     {
@@ -69,7 +69,7 @@ public class Board : MonoBehaviour
     private void Update()
     {
         Row currentRow = rows[rowIndex];
-
+        
         if (Input.GetKeyDown(KeyCode.Backspace))            //this will help us to  Delete Word
         {
             columnIndex = Mathf.Max(columnIndex - 1, 0);        //Mathf.Max... This will Decide between a Bigger Value and Smaller Value and From its name its clear it will choose a Bigger one, So... it will not go in Negative Value
@@ -77,6 +77,7 @@ public class Board : MonoBehaviour
 
             currentRow.tiles[columnIndex].SetLetter('\0');  //SetLetter to Null: \0, ie char to null   property(Declare in Script:Tile:30)
             currentRow.tiles[columnIndex].SetState(emptyState);
+            str = str.Remove(str.Length-1);
 
         }
         else if (columnIndex >= currentRow.tiles.Length)
@@ -93,29 +94,46 @@ public class Board : MonoBehaviour
                 {
                     currentRow.tiles[columnIndex].SetLetter((char)SUPPORTED_KEYS[i]);       //We called a property(Declare in Script:Tile:30) with parameter....Which is declared in Runtime
                     currentRow.tiles[columnIndex].SetState(occupiedState);
-
+                    str += (char)SUPPORTED_KEYS[i];
+                    Debug.Log(str);
                     columnIndex++;                                                          //this will help us to shift from one column to another 
                     break;
                 }
             }
         }
     }
+
+    public void Replay()
+    {
+        SceneManager.LoadSceneAsync(0);
+    }
     public void Hint()
     {
-        //Row currentRow = rows[rowIndex];
-
-        for (int i = 4; i < word.Length; i++)
+        var indexholder = columnIndex;
+        if(indexholder>4)
         {
-            hint.text = "Try: " + word[columnIndex].ToString();
-            //Debug.Log(word[columnIndex]);
+                indexholder = 4;
         }
+        Debug.Log(indexholder);
+        hint.text = "Try: " + word[indexholder];
 
     }
     private void SubmitRow(Row row)
     {
 
-        string remaining = word;        //to Store word which we created randomly in String remaining
+        string remaining = word; //to Store word which we created randomly in String remaining
 
+        if (word == str)
+        {
+            for (int i = 0; i < row.tiles.Length; i++)
+            {
+                Tile tile = row.tiles[i];
+                tile.SetState(correctState);
+            }
+            canvasTwo.gameObject.SetActive(true);
+            return;
+        }
+        
         // check correct/incorrect letters first
         for (int i = 0; i < row.tiles.Length; i++)
         {
@@ -126,8 +144,8 @@ public class Board : MonoBehaviour
             {
                 tile.SetState(correctState);
                 remaining = remaining.Remove(i, 1);     //This is because we are removing one character
-                remaining = remaining.Insert(i, " ");      //IMportant Step
-           }
+                remaining = remaining.Insert(i, " ");
+            }
 
             //InCorrect State
             else if (!word.Contains(tile.letter))
@@ -161,7 +179,13 @@ public class Board : MonoBehaviour
                 }
             }
         }
-
+        
+        if(rowIndex==3)
+        {
+            canvasThree.gameObject.SetActive(true);
+            Debug.Log(" you lost");//canvas ACTIVE
+            return;
+        }
         rowIndex++;
         columnIndex = 0;
 
@@ -169,5 +193,6 @@ public class Board : MonoBehaviour
         {
             enabled = false;
         }
+        str = "";
     }
 }
